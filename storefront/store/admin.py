@@ -40,7 +40,7 @@ class ProductAdmin(admin.ModelAdmin):
 
 class CustomerAdmin(admin.ModelAdmin):
     list_display = ['first_name', 'last_name', 'membership']
-    list_editable = ['membership']
+    # list_editable = ['membership']
     ordering = ['first_name', 'last_name']
     search_fields = ['first_name__istartswith', 'last_name__istartswith']  # add a search area in the customer page to search by name and the input should match the initial value of first and last name
     # istartswith means insensitive to the upper and lower case letter
