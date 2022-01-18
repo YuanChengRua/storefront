@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.validators import MinValueValidator
 
 # Create your models here.
 # new class promotion - product, promotion can have many product and product can have many promotion
@@ -22,15 +23,15 @@ class Collection(models.Model):
 
 class Product(models.Model):
     id = models.CharField(max_length=10, primary_key=True)  # primary key
-    slug = models.SlugField()
+    slug = models.SlugField()  # slug is a part of URL to indicate the content of the web and it is close to normal language but in url format
     title = models.CharField(max_length=255)
-    description = models.TextField()
+    description = models.TextField(null=True, blank=True)  # which means description can be null or blank (not a required field)
     # max price 9999.99
-    unit_price = models.DecimalField(max_digits=6, decimal_places=2)
+    unit_price = models.DecimalField(max_digits=6, decimal_places=2, validators=[MinValueValidator(1)])  # make sure the minimum value of input greater than 1
     inventory = models.IntegerField()
     last_update = models.DateTimeField(auto_now=True)  # everytime we update the product, time will change
     collection = models.ForeignKey(Collection, on_delete=models.PROTECT)  # Collection is parent, product is child class
-    promotions = models.ManyToManyField(Promotion)  # django will generate a reverse in the promition class named products
+    promotions = models.ManyToManyField(Promotion, blank=True)  # django will generate a reverse in the promition class named products
 
     def __str__(self):
         return self.title

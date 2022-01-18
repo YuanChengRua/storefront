@@ -1,4 +1,4 @@
-from django.contrib import admin
+from django.contrib import admin, messages  # messages is defined to return error messages
 from . import models
 from django.db.models.aggregates import Count, Max, Min, Avg, Sum
 from django.utils.html import format_html, urlencode
@@ -19,11 +19,17 @@ class InventoryFilter(admin.SimpleListFilter): # we create another filter by usi
             return queryset.filter(inventory__lt = 10)
 
 class ProductAdmin(admin.ModelAdmin):
+    autocomplete_fields = ['collection']  # autocomplete and autosearch the value whenever we input a value, but we need to add a search field in the collectionadmin
+    prepopulated_fields = {
+        'slug':['title']
+    }  # prepopulated_fields are designed to automatically generate some fields like slug when we input our product title
+    actions = ['clear_inventory']  # need to define this method first and we will build function to specify this method
     list_display = ['title', 'unit_price', 'inventory_status', 'collection_title', 'collection_feature_product']  # we need specific fields in the related models
     list_editable = ['unit_price']
     list_per_page = 10
     list_select_related = ['collection']  # used for related fields
     list_filter = ['collection', 'last_update', InventoryFilter]
+    search_fields = ['title']
     # search_fields = ['']
 
     def collection_title(self, product):
@@ -37,6 +43,15 @@ class ProductAdmin(admin.ModelAdmin):
         if product.inventory < 10:
             return 'low'
         return 'ok'
+    @admin.action(description='Clear Inventory')
+    def clear_inventory(self, request, queryset):
+        updated_count = queryset.update(inventory=0)
+        self.message_user(
+            request,
+            f"{updated_count} products were updated successfully",
+            messages.ERROR
+        )
+
 
 class CustomerAdmin(admin.ModelAdmin):
     list_display = ['first_name', 'last_name', 'membership']
@@ -45,8 +60,14 @@ class CustomerAdmin(admin.ModelAdmin):
     search_fields = ['first_name__istartswith', 'last_name__istartswith']  # add a search area in the customer page to search by name and the input should match the initial value of first and last name
     # istartswith means insensitive to the upper and lower case letter
 
+class OrderItemInline(admin.TabularInline):  # Then we can edit children model in the parent model
+    model = models.OrderItem
+    extra = 1
+    autocomplete_fields = ['product']
 
 class OrderAdmin(admin.ModelAdmin):
+    autocomplete_fields = ['customer']
+    inlines = [OrderItemInline]
     list_display = ['id', 'placed_at', 'customer_first_name', 'customer_last_name']
     list_select_related = ['customer']
 
@@ -58,6 +79,7 @@ class OrderAdmin(admin.ModelAdmin):
 # adeverse field for the models, for example, we need to see the number of product in each collection
 class CollectionAdmin(admin.ModelAdmin):
     list_display = ['title', 'product_count']
+    search_fields = ['title']
     # for the non-exsit column in collection, we need to use function to define
     @admin.display(ordering='product_count')
     def product_count(self, collection):
