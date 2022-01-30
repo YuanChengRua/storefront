@@ -1,7 +1,7 @@
 # map to the view function
 
 from django.urls import path
-from  . import views
+from . import views
 
 #URLConf
 urlpatterns = [
